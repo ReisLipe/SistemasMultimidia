@@ -9,4 +9,4 @@ de qualidade.
 
 Créditos:
 - João Filipe Reis ([ReisLipe](https://github.com/ReisLipe))
-- ...
+- Marce de Sales ([MarcelSal](https://github.com/MarselSal))
