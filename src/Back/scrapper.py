@@ -1,7 +1,8 @@
 import json
 import flask
 import flask_cors
-import datetime
+
+from IPEABolsasScraper import IPEABolsasScraper
 
 
 app = flask.Flask(__name__)
@@ -9,18 +10,8 @@ flask_cors.CORS(app)
 
 
 def scrape_data():
-    # TODO: Código de Scrapping
-    
-    data = {
-        "items": [
-            {"id": 1, "title": "UPE", "valor": "R$ 450"},
-            {"id": 2, "title": "UFPE", "valor": "R$ 1200"},
-            {"id": 3, "title": "UFRPE", "valor": "R$ 800"}
-        ],
-        "timestamp": datetime.datetime.now().isoformat(),
-        "status": "success"
-    }
-
+    scraper = IPEABolsasScraper()
+    data = scraper.scrape()
     return data
 
 
@@ -40,11 +31,6 @@ def get_scrapped_data():
 def health_check():
     return flask.jsonify({"status": "healthy"}), 200
 
-        
-
-# def main():
-#     resultado = scrape_data()
-#     print(json.dumps(resultado, indent=2, ensure_ascii=False))
 
 if __name__ == '__main__':
     PORT = "8080" # MacOs já ocupa a porta padrão do Flask (5000)

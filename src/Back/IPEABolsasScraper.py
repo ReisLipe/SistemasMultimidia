@@ -114,7 +114,7 @@ class IPEABolsasScraper:
                 label = strong.get_text(strip=True).replace(":", "")
                 texto = p.get_text(strip=True).replace(strong.get_text(), "").strip()
                 
-                if label == "Situação":
+                if label == "Situacao":
                     situacao = texto
                 elif label == "Programa":
                     programa = texto
@@ -125,7 +125,3 @@ class IPEABolsasScraper:
             "programa": programa,
             "link": link
         }
-
-scraper = IPEABolsasScraper()
-result = scraper.scrape()
-print(result)
