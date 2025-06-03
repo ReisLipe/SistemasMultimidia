@@ -37,6 +37,7 @@ class IPEAService: ObservableObject {
         
         do {
             let (data, response) = try await urlSession.data(from: url)
+            print("Data: \(data)")
             
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
                 await MainActor.run {

@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct MainView: View {
+    @StateObject private var service = IPEAService()
+    
     @State var showingInfoSheet: Bool = false
     @State var showingAboutSheet: Bool = false
     
@@ -26,6 +28,12 @@ struct MainView: View {
                         .font(.Header)
                         .foregroundStyle(.white)
                 }
+                
+                if service.isLoading {
+                    Spacer()
+                    LoadingView()
+                }
+                
                 Spacer()
                 
                 // Buttons
@@ -102,7 +110,17 @@ struct MainView: View {
     
     private func openInfoWindow() { self.showingInfoSheet = true }
     private func openAboutWindow() { self.showingAboutSheet = true }
-    private func search() {}
+    private func search() {
+        Task {
+            print("(MainView) Fetching bolsas...")
+            await self.service.fetchBolsas()
+            
+            if !service.isLoading {
+                print("(MainView) ErrorMSG: \(String(describing: service.errorMessage))")
+                print("(MainView) Bolsas: \n \(service.bolsas)")
+            }
+        }
+    }
 }
 
 #Preview {
