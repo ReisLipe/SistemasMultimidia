@@ -8,7 +8,14 @@
 import SwiftUI
 
 class IPEAService: ObservableObject {
-    private let baseURL = "http://localhost:8080/api/scrape"
+    private var baseURL: String {
+        #if targetEnvironment(simulator)
+            return "http://localhost:8080/api/scrape"
+        #else
+            let localIP = "172.20.10.8" // IP local 
+            return "http://\(localIP):8080/api/scrape"
+        #endif
+    }
     
     @Published var bolsas: [BolsaModel] = []
     @Published var isLoading: Bool = false

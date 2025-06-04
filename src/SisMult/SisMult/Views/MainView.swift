@@ -32,6 +32,8 @@ struct MainView: View {
                 if service.isLoading {
                     Spacer()
                     LoadingView()
+                } else {
+                    BolsaListView(bolsas: self.service.bolsas)
                 }
                 
                 Spacer()

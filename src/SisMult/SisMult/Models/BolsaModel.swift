@@ -10,5 +10,6 @@ struct BolsaModel: Codable, Identifiable {
     let id: Int
     let title: String
     let programa: String
+    let situacao: String
     let link: String
 }
