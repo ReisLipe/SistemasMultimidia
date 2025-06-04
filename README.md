@@ -16,3 +16,4 @@ dispositivos na sua rede local.
 Créditos:
 - João Filipe Reis ([ReisLipe](https://github.com/ReisLipe))
 - Marce de Sales ([MarcelSal](https://github.com/MarselSal))
+- Erasmo Quixabeira ([Erasmo20](https://github.com/Erasmo20))
