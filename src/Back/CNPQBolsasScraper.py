@@ -60,7 +60,7 @@ class CNPQBolsasScraper:
         p = chamada.find("p")
         descricao = p.get_text(strip=True) if p else ""
 
-        # Período de inscrições
+        # Período de inscricoes
         inscricao = chamada.select_one("div.inscricao ul.datas li")
         periodo_inscricao = inscricao.get_text(strip=True) if inscricao else ""
 

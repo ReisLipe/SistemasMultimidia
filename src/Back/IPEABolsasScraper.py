@@ -2,6 +2,7 @@
 import requests
 import datetime
 import pandas as pd
+import re
 
 from bs4 import BeautifulSoup
 from typing import Dict, List, Optional
@@ -38,7 +39,6 @@ class IPEABolsasScraper:
                 item_data = self._extract_item_data(chamada)
                 all_items.append(item_data)
 
-        # Salva os itens no CSV
         df = pd.DataFrame(all_items)
         df = df[["titulo", "descricao", "inscricoes", "link", "situacao"]]
         df.to_csv(self.csv_name, index=False, encoding="utf-8-sig")
@@ -98,16 +98,26 @@ class IPEABolsasScraper:
 
 
     def _extract_item_data(self, chamada) -> Dict[str, str]:
-        # Título e link
         h4 = chamada.find("h4", class_="result-title")
         a_tag = h4.find("a") if h4 else None
-        titulo = a_tag.get_text(strip=True) if a_tag else ""
+        titulo_completo = a_tag.get_text(strip=True) if a_tag else ""
         link = self.base_url + a_tag["href"] if a_tag and "href" in a_tag.attrs else ""
 
-        # Situação, Programa e Prazo de Inscrição
+        # titulo
+        match = re.search(r"Chamada Pública nº? ?\d+/\d{4}", titulo_completo)
+        titulo = match.group(0) if match else titulo_completo
+        # descricao
+        descricao = ""
+        p_objetivo = chamada.find("p", class_="objetivo")
+        if p_objetivo:
+            texto_objetivo = p_objetivo.get_text(strip=True)
+            projeto_match = re.search(r'Projeto:\s*[“"]?(.*?)[”"]?\.?$', texto_objetivo)
+            if projeto_match:
+                descricao = projeto_match.group(1).strip().strip('“”"')
+
+        # Situacao, programa e Pprazo de inscricao
         p_tags = chamada.find_all("p")
         situacao = ""
-        programa = ""
         prazo_inscricao = ""
 
         for p in p_tags:
@@ -118,18 +128,14 @@ class IPEABolsasScraper:
 
                 if label == "situação":
                     situacao = texto
-                elif label == "programa":
-                    programa = texto
                 elif "prazo de inscrição" in label:
                     prazo_inscricao = texto.replace("Prazo de inscrição:", "").strip()
-
-        descricao = programa  # Usando programa como descrição
-        inscricoes = prazo_inscricao  # Usando prazo de inscrição como inscrições
 
         return {
             "titulo": titulo,
             "descricao": descricao,
-            "inscricoes": inscricoes,
+            "inscricoes": prazo_inscricao,
             "link": link,
             "situacao": situacao
         }
+
