@@ -20,7 +20,8 @@ struct BolsaListView: View {
                     
                     Spacer()
                     
-                    Text(bolsa.situacao)
+                    // TODO: Obter uma forma melhor de selecionar as bolsas através da situação (situacao == "Fechada") {fora}
+                    Text(bolsa.situacao ?? "")
                         .font(.caption)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
@@ -28,12 +29,7 @@ struct BolsaListView: View {
                         .foregroundColor(.blue)
                         .cornerRadius(4)
                 }
-                
-                Text(bolsa.programa)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-
-                
+ 
                 HStack {
                     Link("Ver detalhes", destination: URL(string: bolsa.link)!)
                         .font(.caption)
