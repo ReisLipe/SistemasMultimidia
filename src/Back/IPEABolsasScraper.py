@@ -1,6 +1,8 @@
+
 import requests
 import datetime
 import pandas as pd
+import re
 
 from bs4 import BeautifulSoup
 from typing import Dict, List, Optional
@@ -15,41 +17,54 @@ class IPEABolsasScraper:
         self.csv_name = "bolsas_ipea.csv"
 
     def scrape(self) -> Dict:
-        print("(Scraper) Iniciando raspagem das bolsas IPEA...")
-        
-        # Realiza o fetch da página
-        response = self._fetch_page()
-        if not response:
-            return self._format_response([], "error")
+        print("\n(Scraper) Iniciando raspagem das bolsas IPEA...")
 
-        # Parse do HTML
+        all_items = []
+        response = self._fetch_page(self.url)
+        if not response:
+            return self._format_response(all_items, "error")
+
         lista_chamadas = self._parse_html(response.text)
         if not lista_chamadas:
-            return self._format_response([], "error")
+            return self._format_response(all_items, "error")
 
-        # Extrai os itens do HTML
         chamadas = lista_chamadas.find_all("li")
-        all_items = []
         for i, chamada in enumerate(chamadas):
-            print(f"(Scraper) Processando item {i+1} de {len(chamadas)}")
+            print(f"(Scraper) Processando item {len(all_items)+1}")
             item_data = self._extract_item_data(chamada)
             all_items.append(item_data)
-        
-        # Salva os itens no CSV
+
+        # for start in range(0, 40, 10):  # Vai de 0 até 30 (inclusive), pulando de 10 em 10
+        #     page_url = self.url if start == 0 else f"{self.url}?start={start}"
+        #     print(f"\n(Scraper) Raspando página com URL: {page_url}")
+
+        #     response = self._fetch_page(page_url)
+        #     if not response:
+        #         continue  # Pula para a próxima página se der erro
+
+        #     lista_chamadas = self._parse_html(response.text)
+        #     if not lista_chamadas:
+        #         continue
+
+        #     chamadas = lista_chamadas.find_all("li")
+        #     for i, chamada in enumerate(chamadas):
+        #         print(f"(Scraper) Processando item {len(all_items)+1}")
+        #         item_data = self._extract_item_data(chamada)
+        #         all_items.append(item_data)
+
         df = pd.DataFrame(all_items)
+        df = df[["titulo", "descricao", "inscricoes", "link", "situacao"]]
         df.to_csv(self.csv_name, index=False, encoding="utf-8-sig")
-        print(f"(Scraper) {len(all_items)} itens salvos em '{self.csv_name}'")
+        print(f"\n(Scraper) {len(all_items)} itens salvos em '{self.csv_name}'")
 
-        # Transforma a lista em uma lista de dicionários
-        result = self._format_response(all_items, "success")
-        return result
+        return self._format_response(all_items, "success")
 
         
 
-    def _fetch_page(self):
+    def _fetch_page(self, page_url):
         try:
-            print(f"(Scraper) Fazendo requisição para: {self.url}")
-            response = requests.get(self.url)
+            print(f"(Scraper) Fazendo requisição para: {page_url}")
+            response = requests.get(page_url)
             response.encoding = 'utf-8'
             print(f"(Scraper) Resposta recebida! Status: {response.status_code}")
             return response
@@ -75,15 +90,14 @@ class IPEABolsasScraper:
 
 
     def _format_response(self, items: List[Dict], status: str = "success") -> Dict:
-        """Formata a resposta no padrão solicitado"""
-
         formatted_items = []
         for i, item in enumerate(items, 1):
             formatted_items.append({
                 "id": i,
                 "title": item["titulo"],
                 "situacao": item["situacao"],
-                "programa": item["programa"],
+                "descricao": item.get("descricao", ""),   # Corrigido aqui
+                "inscricoes": item.get("inscricoes", ""), # Também para manter padronizado
                 "link": item["link"]
             })
         
@@ -95,33 +109,46 @@ class IPEABolsasScraper:
         }
 
 
+
     def _extract_item_data(self, chamada) -> Dict[str, str]:
-        """Extrai dados de um item específico"""
-        # Título e link
         h4 = chamada.find("h4", class_="result-title")
         a_tag = h4.find("a") if h4 else None
-        titulo = a_tag.get_text(strip=True) if a_tag else ""
+        titulo_completo = a_tag.get_text(strip=True) if a_tag else ""
         link = self.base_url + a_tag["href"] if a_tag and "href" in a_tag.attrs else ""
-        
-        # Situação e Programa
+
+        # titulo
+        match = re.search(r"Chamada Pública nº? ?\d+/\d{4}", titulo_completo)
+        titulo = match.group(0) if match else titulo_completo
+        # descricao
+        descricao = ""
+        p_objetivo = chamada.find("p", class_="objetivo")
+        if p_objetivo:
+            texto_objetivo = p_objetivo.get_text(strip=True)
+            projeto_match = re.search(r'Projeto:\s*[“"]?(.*?)[”"]?\.?$', texto_objetivo)
+            if projeto_match:
+                descricao = projeto_match.group(1).strip().strip('“”"')
+
+        # Situacao, programa e Pprazo de inscricao
         p_tags = chamada.find_all("p")
         situacao = ""
-        programa = ""
-        
+        prazo_inscricao = ""
+
         for p in p_tags:
             strong = p.find("strong")
             if strong:
-                label = strong.get_text(strip=True).replace(":", "")
+                label = strong.get_text(strip=True).replace(":", "").lower()
                 texto = p.get_text(strip=True).replace(strong.get_text(), "").strip()
-                
-                if label == "Situacao":
+
+                if label == "situação":
                     situacao = texto
-                elif label == "Programa":
-                    programa = texto
-        
+                elif "prazo de inscrição" in label:
+                    prazo_inscricao = texto.replace("Prazo de inscrição:", "").strip()
+
         return {
             "titulo": titulo,
-            "situacao": situacao,
-            "programa": programa,
-            "link": link
+            "descricao": descricao,
+            "inscricoes": prazo_inscricao,
+            "link": link,
+            "situacao": situacao
         }
+

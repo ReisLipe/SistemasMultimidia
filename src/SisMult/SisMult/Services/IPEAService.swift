@@ -12,7 +12,7 @@ class IPEAService: ObservableObject {
         #if targetEnvironment(simulator)
             return "http://localhost:8080/api/scrape"
         #else
-            let localIP = "172.20.10.8" // IP local 
+            let localIP = "192.168.1.65" // IP local // ifconfig | grep "inet " | grep -v 127.0.0.1
             return "http://\(localIP):8080/api/scrape"
         #endif
     }
@@ -29,48 +29,74 @@ class IPEAService: ObservableObject {
     }
     
     func fetchBolsas() async {
-        await MainActor.run {
-            self.isLoading = true
-            self.errorMessage = nil
-        }
-        
-        guard let url = URL(string: baseURL) else {
-            await MainActor.run {
-                errorMessage = "URL inválida"
-                isLoading = false
-            }
-            return
-        }
+        await updateLoadingStatus(isLoading: true, error: nil)
         
         do {
-            let (data, response) = try await urlSession.data(from: url)
-            print("Data: \(data)")
-            
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                await MainActor.run {
-                    self.errorMessage = "Erro ao obter dados"
-                    self.isLoading = false
-                }
-                return
-            }
-            
-            let decoder = JSONDecoder()
-            let ipeaResponse = try decoder.decode(IPEAResponseModel.self, from: data)
-            
-            await MainActor.run {
-                self.bolsas = ipeaResponse.items
-                self.isLoading = false
-            }
+            let bolsas = try await performNetworkRequest()
+            await updateLoadingStatus(isLoading: false, error: nil)
+            await updateBolsas(bolsas)
         } catch {
-            await MainActor.run {
-                if error.localizedDescription.contains("timeout") {
-                    self.errorMessage = "Tempo limite excedido"
-                } else {
-                    self.errorMessage = "Erro: \(error.localizedDescription)"
-                }
-                
-                self.isLoading = false
-            }
+            let fetchError = mapToFetchError(error)
+            await updateLoadingStatus(isLoading: false, error: fetchError.localizedDescription)
         }
+    }
+    
+    private func performNetworkRequest() async throws -> [BolsaModel] {
+        let url = try createURL()
+        let (data, response) = try await urlSession.data(from: url)
+        print("Response obtaind from server: \(data)")
+              
+        try validateResponse(response)
+        let bolsas = try parseResponse(data)
+        
+        return bolsas
+    }
+    
+    private func createURL() throws -> URL {
+        guard let url = URL(string: baseURL) else {
+            throw FetchError.invalidURL
+        }
+        return url
+    }
+    
+    private func validateResponse(_ response: URLResponse) throws {
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw FetchError.invalidResponse
+        }
+    }
+
+    private func parseResponse(_ data: Data) throws -> [BolsaModel] {
+        let decoder = JSONDecoder()
+        do {
+            let ipeaResponse = try decoder.decode(IPEAResponseModel.self, from: data)
+            return ipeaResponse.items
+        } catch let DecodingError.keyNotFound(key, context) {
+            print("Chave não encontrada: \(key)")
+            print("Contexto: \(context)")
+            throw FetchError.invalidResponse
+        } catch let DecodingError.typeMismatch(type, context) {
+            print("Tipo incompatível: \(type)")
+            print("Contexto: \(context)")
+            throw FetchError.invalidResponse
+        }
+    }
+
+    private func mapToFetchError(_ error: Error) -> FetchError {
+        if error.localizedDescription.contains("timeout") {
+            return .timeout
+        } else if error is FetchError {
+            return error as! FetchError
+        } else {
+            return .network(error)
+        }
+    }
+    
+    @MainActor private func updateLoadingStatus(isLoading: Bool, error: String?) {
+        self.isLoading = isLoading
+        self.errorMessage = error
+    }
+    @MainActor private func updateBolsas(_ bolsas: [BolsaModel]) {
+        self.bolsas = bolsas
     }
 }
