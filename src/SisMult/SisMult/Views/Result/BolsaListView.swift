@@ -45,6 +45,9 @@ struct BolsaListView: View {
             .padding(.vertical, 4)
         }
         .listStyle(PlainListStyle())
+        .onAppear {
+            bolsas.filter { $0.situacao == "Situação:ABERTA" || $0.situacao == nil }
+        }
     }
 }
 

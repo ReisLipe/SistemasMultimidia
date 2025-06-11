@@ -17,27 +17,40 @@ class IPEABolsasScraper:
         self.csv_name = "bolsas_ipea.csv"
 
     def scrape(self) -> Dict:
-        print("(Scraper) Iniciando raspagem das bolsas IPEA...")
+        print("\n(Scraper) Iniciando raspagem das bolsas IPEA...")
 
         all_items = []
+        response = self._fetch_page(self.url)
+        if not response:
+            return self._format_response(all_items, "error")
 
-        for start in range(0, 40, 10):  # Vai de 0 até 30 (inclusive), pulando de 10 em 10
-            page_url = self.url if start == 0 else f"{self.url}?start={start}"
-            print(f"\n(Scraper) Raspando página com URL: {page_url}")
+        lista_chamadas = self._parse_html(response.text)
+        if not lista_chamadas:
+            return self._format_response(all_items, "error")
 
-            response = self._fetch_page(page_url)
-            if not response:
-                continue  # Pula para a próxima página se der erro
+        chamadas = lista_chamadas.find_all("li")
+        for i, chamada in enumerate(chamadas):
+            print(f"(Scraper) Processando item {len(all_items)+1}")
+            item_data = self._extract_item_data(chamada)
+            all_items.append(item_data)
 
-            lista_chamadas = self._parse_html(response.text)
-            if not lista_chamadas:
-                continue
+        # for start in range(0, 40, 10):  # Vai de 0 até 30 (inclusive), pulando de 10 em 10
+        #     page_url = self.url if start == 0 else f"{self.url}?start={start}"
+        #     print(f"\n(Scraper) Raspando página com URL: {page_url}")
 
-            chamadas = lista_chamadas.find_all("li")
-            for i, chamada in enumerate(chamadas):
-                print(f"(Scraper) Processando item {len(all_items)+1}")
-                item_data = self._extract_item_data(chamada)
-                all_items.append(item_data)
+        #     response = self._fetch_page(page_url)
+        #     if not response:
+        #         continue  # Pula para a próxima página se der erro
+
+        #     lista_chamadas = self._parse_html(response.text)
+        #     if not lista_chamadas:
+        #         continue
+
+        #     chamadas = lista_chamadas.find_all("li")
+        #     for i, chamada in enumerate(chamadas):
+        #         print(f"(Scraper) Processando item {len(all_items)+1}")
+        #         item_data = self._extract_item_data(chamada)
+        #         all_items.append(item_data)
 
         df = pd.DataFrame(all_items)
         df = df[["titulo", "descricao", "inscricoes", "link", "situacao"]]
