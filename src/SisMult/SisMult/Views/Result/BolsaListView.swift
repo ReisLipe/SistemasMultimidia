@@ -24,16 +24,23 @@ struct BolsaListView: View {
                 
                 Text(bolsa.descricao)
                     .font(.subheadline)
-                    // .lineLimit(2)
                     .foregroundColor(.grayText)
+ 
+                HStack {
+                    Link("Ver mais", destination: URL(string: bolsa.link)!)
+                        .font(.caption)
+                        .foregroundColor(.redEducation)
+                    
+                    Spacer()
+                }
             }
             .padding()
             .background(Color.redSoft)
             .cornerRadius(12)
         }
         .listStyle(PlainListStyle())
-        .cornerRadius(8)
-        .shadow(radius: 8)
+        .cornerRadius(12)
+        .shadow(radius: 12)
     }
 }
 
