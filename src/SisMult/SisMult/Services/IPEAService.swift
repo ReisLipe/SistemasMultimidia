@@ -97,6 +97,7 @@ class IPEAService: ObservableObject {
         self.errorMessage = error
     }
     @MainActor private func updateBolsas(_ bolsas: [BolsaModel]) {
-        self.bolsas = bolsas
+        // self.bolsas = bolsas
+        self.bolsas = bolsas.filter { $0.situacao == "Situação:ABERTA" || $0.situacao == nil }
     }
 }

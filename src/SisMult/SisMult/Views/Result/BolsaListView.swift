@@ -17,37 +17,23 @@ struct BolsaListView: View {
                     Text(bolsa.title)
                         .font(.headline)
                         .lineLimit(2)
+                        .foregroundColor(.redEducation)
                     
                     Spacer()
-                    
-                    // TODO: Obter uma forma melhor de selecionar as bolsas através da situação (situacao == "Fechada") {fora}
-                    Text(bolsa.situacao ?? "")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.1))
-                        .foregroundColor(.blue)
-                        .cornerRadius(4)
                 }
- 
-                HStack {
-                    Link("Ver detalhes", destination: URL(string: bolsa.link)!)
-                        .font(.caption)
-                        .foregroundColor(.accentColor)
-                    
-                    Spacer()
-                    
-                    Text("ID: \(bolsa.id)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+                
+                Text(bolsa.descricao)
+                    .font(.subheadline)
+                    // .lineLimit(2)
+                    .foregroundColor(.grayText)
             }
-            .padding(.vertical, 4)
+            .padding()
+            .background(Color.redSoft)
+            .cornerRadius(12)
         }
         .listStyle(PlainListStyle())
-        .onAppear {
-            bolsas.filter { $0.situacao == "Situação:ABERTA" || $0.situacao == nil }
-        }
+        .cornerRadius(8)
+        .shadow(radius: 8)
     }
 }
 
