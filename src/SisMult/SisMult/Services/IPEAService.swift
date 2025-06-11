@@ -81,7 +81,7 @@ class IPEAService: ObservableObject {
             throw FetchError.invalidResponse
         }
     }
-
+    
     private func mapToFetchError(_ error: Error) -> FetchError {
         if error.localizedDescription.contains("timeout") {
             return .timeout
