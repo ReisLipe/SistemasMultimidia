@@ -17,3 +17,4 @@ Créditos:
 - João Filipe Reis ([ReisLipe](https://github.com/ReisLipe))
 - Marcel de Sales ([MarcelSal](https://github.com/MarselSal))
 - Erasmo Quixabeira ([Erasmo20](https://github.com/Erasmo20))
+- Lyssa Rodrigues ([lyssasrodrigues](https://github.com/lyssasrodrigues).)
